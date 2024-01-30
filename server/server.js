@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import { readFileSync } from "fs";
 
 // create http server forwarding network traffic to socketio server
 const io = new Server(8001, {
@@ -9,6 +10,7 @@ const io = new Server(8001, {
 
 const clients = new Set();
 const TICK_DELAY = 1000 / 60;
+const MAPS_DATA = JSON.parse(readFileSync("./maps.json"));
 function Client(socket) {
     this.socket = socket;
     this.position = {x: 0, y: 0};
@@ -20,9 +22,16 @@ io.on("connection", socket => {
     console.log("New connection!");
     let client = new Client(socket);
     clients.add(client);
-
+    socket.emit("buildMap", MAPS_DATA.myWorld);
     socket.on("position", (x, y) => {
         client.position = {x, y};
+    });
+
+    socket.on("disconnect", () => {
+        clients.delete(client);
+        clients.forEach(c => {
+            c.socket.emit("removeClient", socket.id);
+        })
     });
 });
 function tick() {

@@ -13,6 +13,7 @@ class EntityManager {
         this.entities.set(data.id, {
             sprite: playerSprite
         })
+        console.log("REGISTERED");
     }
 
     updatePlayerData(newData) {

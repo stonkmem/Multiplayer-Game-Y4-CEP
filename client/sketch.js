@@ -1,7 +1,7 @@
 let ball;
 
-const socket = io.connect("ws://localhost:8000");
-let em = EntityManager();
+const socket = io.connect("ws://localhost:8001");
+let em = new EntityManager();
 function setup() {
 	new Canvas("fullscreen");
 
@@ -30,6 +30,21 @@ function move() {
         ball.pos.x += SPEED;
     }
 }
+
+socket.on("buildMap", (mapData) => {
+    for (const blockData of Object.values(mapData.blocks)) {
+        let group = new Group();
+        Object.assign(group, blockData);
+        new Tiles(
+            blockData.tileMap,
+            blockData.startX,
+            blockData.startY,
+            blockData.w,
+            blockData.h
+        );
+    }
+});
+
 socket.on("playerDataUpdate", (id, playerData) => {
     for (let data of playerData) {
         if (data.id === id)
@@ -39,5 +54,13 @@ socket.on("playerDataUpdate", (id, playerData) => {
         } else {
             em.updatePlayerData(data);
         }
+    }
+});
+
+socket.on("removeClient", id => {
+    let playerData = em.get(id);
+    if (playerData) {
+        playerData.sprite.remove();
+        em.delete(id);
     }
 });
