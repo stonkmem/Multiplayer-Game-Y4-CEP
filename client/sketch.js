@@ -1,5 +1,5 @@
 let ball;
-let currentRoomCode = null;
+let currentRoomCode = 0;
 
 const socket = io.connect("ws://localhost:8001");
 let em = new EntityManager();
@@ -8,7 +8,7 @@ function setup() {
 
 	ball = new Sprite();
 	ball.diameter = 50;
-        // p5play draws over our draw() loop, so we
+    // p5play draws over our draw() loop, so we
     // have to jump thru hoops to draw our text
     // over our sprites...... by making a another
     // sprite. wow.

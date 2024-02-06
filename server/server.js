@@ -9,7 +9,7 @@ const io = new Server(8001, {
 });
 
 const clients = new Set();
-const rooms=[];
+let rooms=[];
 const TICK_DELAY = 1000 / 60;
 const MAPS_DATA = JSON.parse(readFileSync("./maps.json"));
 function Client(socket) {
@@ -28,6 +28,26 @@ io.on("connection", socket => {
         client.position = {x, y};
     });
 
+    socket.on("requestCreateRoom", () => {
+        const roomCode = generateRandomRoomCode();
+        let room = new Room(roomCode);
+        room.addClient(client);
+        rooms.push(room);
+        socket.emit("setRoomCode", roomCode);
+        socket.emit("buildMap", MAPS_DATA.myWorld);
+    });
+    
+    socket.on("requestJoinRoom", (code) => {
+        for (let room of rooms) {
+            if (room.id === code) {
+                room.addClient(client);
+                socket.emit("setRoomCode", code);
+                socket.emit("buildMap", MAPS_DATA.myWorld);
+                return;
+            }
+        }
+    });
+
     socket.on("disconnect", () => {
         if (client.room) {
             client.room.removeClient(client);
@@ -42,26 +62,6 @@ io.on("connection", socket => {
 function generateRandomRoomCode() {
     return (+new Date()).toString(36).slice(-5);
 }
-
-socket.on("requestCreateRoom", () => {
-    const roomCode = generateRandomRoomCode();
-    let room = new Room(roomCode);
-    room.addClient(client);
-    rooms.push(room);
-    socket.emit("setRoomCode", roomCode);
-    socket.emit("buildMap", MAPS_DATA.myWorld);
-});
-
-socket.on("requestJoinRoom", (code) => {
-    for (let room of rooms) {
-        if (room.id === code) {
-            room.addClient(client);
-            socket.emit("setRoomCode", code);
-            socket.emit("buildMap", MAPS_DATA.myWorld);
-            return;
-        }
-    }
-});
 
 class Room {
     constructor(id) {
@@ -89,7 +89,7 @@ class Room {
 }
 
 function tick() {
-    for(room in rooms){
+    for(let room of rooms){
         let allData = [...clients].map(c => {
             return {
                 position: c.position,
